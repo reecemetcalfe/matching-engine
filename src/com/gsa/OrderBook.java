@@ -19,7 +19,7 @@ class OrderBook {
         try {
             if (order.side == 'B') {
                 //Buy - check if matched anything on sellQueue
-                int remainingQty = tryMatchBuyOrderToSellQueue(order);
+                int remainingQty = tryMatchOrderToBook(order, sellQueue);
                 //Either no match or have remaining visibleQty so add to buyQueue
                 if (remainingQty > 0) {
                     int visibleQty = remainingQty;
@@ -30,7 +30,7 @@ class OrderBook {
                 }
             } else {
                 //Sell - check if matched anything on buyQueue
-                int remainingQty = tryMatchSellOrderToBuyQueue(order);
+                int remainingQty = tryMatchOrderToBook(order, buyQueue);
                 //Either no match or have remaining visibleQty so add to sellQueue
                 if (remainingQty > 0) {
                     int visibleQty = remainingQty;
@@ -54,7 +54,7 @@ class OrderBook {
         return topOfBookOrder.limitPrice > orderPrice;
     }
 
-    private int tryMatchBuyOrderToSellQueue(Order order) throws Exception {
+    private int tryMatchOrderToBook(Order order, PriorityQueue<OrderBookEntry> orderBookEntries) throws Exception {
         short orderPrice = order.limitPrice;
         int qtyLeftToFill = order.totalQty;
         OrderBookEntry topOfBook;
@@ -68,16 +68,16 @@ class OrderBook {
             if (!icebergQueue.isEmpty()) {
                 IcebergOrder io = icebergQueue.poll();
                 int visibleQty = Math.min(io.peakSize, io.totalQty - io.filledQty);
-                sellQueue.add(new OrderBookEntry(visibleQty, io));
+                orderBookEntries.add(new OrderBookEntry(visibleQty, io));
             }
 
             //Start sweeping down the book
-            while (qtyLeftToFill > 0 && !sellQueue.isEmpty()) {
+            while (qtyLeftToFill > 0 && !orderBookEntries.isEmpty()) {
 
-                if (sellQueue.peek().limitPrice > orderPrice) break;    //Gone below price point of order
+                if (hasBrokenLimitPrice(orderBookEntries.peek().order, orderPrice)) break;    //Gone below price point of order
 
                 //Remove entry from top of book
-                topOfBook = sellQueue.poll();
+                topOfBook = orderBookEntries.poll();
 
                 //Save visible visibleQty in case it's an Iceberg
                 int visiblePeakQty = topOfBook.visibleQty;
@@ -91,64 +91,7 @@ class OrderBook {
                 if (tradeQty < visiblePeakQty) {
                     //Taken part liquidity, amend visibleQty and add back to book as is [keep time priority]
                     topOfBook.visibleQty = visiblePeakQty - tradeQty;
-                    sellQueue.add(topOfBook);
-                } else {
-                    //Taken full visibleQty, check if it's an iceberg with further hidden qty
-                    if (topOfBook.order.filledQty < topOfBook.order.totalQty) {
-                        //Must be an iceberg otherwise we'd still have peak left
-                        if (!(topOfBook.order instanceof IcebergOrder))
-                            throw new Exception("Not an iceberg, something went wrong");
-                        //Add to the queue to refresh peak once we've gone down the current available orders
-                        icebergQueue.add((IcebergOrder) topOfBook.order);
-                    }
-                }
-            }
-        } while (!icebergQueue.isEmpty());  //Re-add to the book and try again
-
-        tradeMap.values().forEach(Trade::printTrade);   //Print trades
-
-        return qtyLeftToFill;
-    }
-
-
-    private int tryMatchSellOrderToBuyQueue(Order order) throws Exception {
-        short orderPrice = order.limitPrice;
-        int qtyLeftToFill = order.totalQty;
-        OrderBookEntry topOfBook;
-        //Holds Iceberg orders that have had their peak executed but still have hidden volume.
-        Queue<IcebergOrder> icebergQueue = new LinkedList<>();
-        HashMap<TradeId, Trade> tradeMap = new HashMap<>();
-
-        //Work down the book to fill - execute loop at least once
-        do {
-            //Re-add any used icebergs to the book [new timestamps]
-            if (!icebergQueue.isEmpty()) {
-                IcebergOrder io = icebergQueue.poll();
-                int visibleQty = Math.min(io.peakSize, io.totalQty - io.filledQty);
-                buyQueue.add(new OrderBookEntry(visibleQty, io));
-            }
-
-            //Start sweeping down the book
-            while (qtyLeftToFill > 0 && !buyQueue.isEmpty()) {
-
-                if (buyQueue.peek().limitPrice < orderPrice) break;    //Gone below price point of order
-
-                //Remove entry from top of book
-                topOfBook = buyQueue.poll();
-
-                //Save visible visibleQty in case it's an Iceberg
-                int visiblePeakQty = topOfBook.visibleQty;
-
-                int tradeQty = Math.min(topOfBook.visibleQty, qtyLeftToFill);                 //Execute all visible qty
-                execute(order, topOfBook.order, topOfBook.limitPrice, tradeQty, tradeMap);    //Updates order qtys
-
-                //Update visibleQty left
-                qtyLeftToFill = order.totalQty - order.filledQty;
-
-                if (tradeQty < visiblePeakQty) {
-                    //Taken part liquidity, amend visibleQty and add back to book as is [keep time priority]
-                    topOfBook.visibleQty = visiblePeakQty - tradeQty;
-                    buyQueue.add(topOfBook);
+                    orderBookEntries.add(topOfBook);
                 } else {
                     //Taken full visibleQty, check if it's an iceberg with further hidden qty
                     if (topOfBook.order.filledQty < topOfBook.order.totalQty) {
