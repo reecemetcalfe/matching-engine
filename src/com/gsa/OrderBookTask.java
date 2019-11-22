@@ -53,6 +53,7 @@ public class OrderBookTask {
         }
     }
 
+    /* Assumed all orders have a limit price */
     private Order createOrder(String... input) throws IOException {
         //Basic input validation to ascertain which order type
         if (input.length == 4) {
@@ -65,17 +66,6 @@ public class OrderBookTask {
             throw new IOException("Error creating order with input: " + Arrays.toString(input));
         }
     }
-
-    /*
-     * Questions:
-     *  An order wiping out multiple whole peaks will still reflect modulo peak qty?
-     *
-     *  Do you have any example input/output i can test with?
-     *
-     *  Any specific performance requirements?
-     *
-     *  Does it need to handle multiple icebergs at the same price point? e.g. latter part of 4.2.3.2
-     */
 
     //Entry point
     public static void main(String[] args) {
