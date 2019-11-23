@@ -163,4 +163,10 @@ class OrderBook {
         }
         System.out.println("+-----------------------------------------------------------------+");
     }
+
+    void clear(){
+        System.out.println("**** Cleared Order Book ****");
+        buyQueue.clear();
+        sellQueue.clear();
+    }
 }
