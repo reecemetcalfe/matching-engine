@@ -21,16 +21,11 @@ class OrderBookEntry {
         this.visibleQty = visibleQty;
     }
 
+    //Getters needed for PriorityQueue comparator
     short getLimitPrice() {
         return limitPrice;
     }
-
     long getEntryTime() {
         return entryTime;
-    }
-
-    //Used for re-entering next Peak of iceberg orders
-    void refreshTimestamp() {
-        this.entryTime = System.nanoTime();
     }
 }

@@ -3,6 +3,11 @@ package com.gsa;
 import java.text.NumberFormat;
 import java.util.*;
 
+/*
+ * Holds Order Book as two Priority Queues, buy and sell.
+ * When Orders are added they are attempted to be matched to the book,
+ * otherwise they are added themselves if not fully filled
+ */
 class OrderBook {
     //Priority Queue ordered by reverse price then entryTime, so head of queue is highest price/lowest time
     private PriorityQueue<OrderBookEntry> buyQueue = new PriorityQueue<>(
@@ -14,8 +19,11 @@ class OrderBook {
                     Comparator.comparing(OrderBookEntry::getLimitPrice)
                                 .thenComparing(OrderBookEntry::getEntryTime));
 
+    /*
+     * Add @order to the book.
+     * Tries to match then adds to book itself
+     */
     void addOrder(Order order) {
-        System.out.println("***Received Order: "+order+"****");  //TODO - remove
         try {
             if (order.side == 'B') {
                 //Buy - check if matched anything on sellQueue
@@ -46,6 +54,7 @@ class OrderBook {
         printOrderBook();
     }
 
+    //Check if @topOfBookOrder price doesn't satisfy the limit price of the order @orderPrice
     private boolean hasBrokenLimitPrice(Order topOfBookOrder, short orderPrice) {
         if (topOfBookOrder.side == 'B') {
             return topOfBookOrder.limitPrice < orderPrice;
@@ -54,6 +63,7 @@ class OrderBook {
         return topOfBookOrder.limitPrice > orderPrice;
     }
 
+    //Matching logic. Try match @order to existing Order Entries in @orderBookEntries
     private int tryMatchOrderToBook(Order order, PriorityQueue<OrderBookEntry> orderBookEntries) throws Exception {
         short orderPrice = order.limitPrice;
         int qtyLeftToFill = order.totalQty;
@@ -110,12 +120,23 @@ class OrderBook {
         return qtyLeftToFill;
     }
 
-    private void execute(Order buy, Order sell, short price, int qty, HashMap<TradeId, Trade> tradeMap) {
+    /*
+     * Perform an exection between Order @o1 and Order @o2 at @qty and @price.
+     * Adds entry to map @tradeMap in case multiple executions happen between Iceberg peaks
+     */
+    private void execute(Order o1, Order o2, short price, int qty, HashMap<TradeId, Trade> tradeMap) {
         //Amend order qtys
-        buy.filledQty += qty;
-        sell.filledQty += qty;
+        o1.filledQty += qty;
+        o2.filledQty += qty;
+
         //Generate trade Id
-        TradeId tradeId = new TradeId(buy.orderId, sell.orderId);
+        TradeId tradeId;
+        if (o1.side == 'B') {
+            tradeId = new TradeId(o1.orderId, o2.orderId);
+        } else {
+            tradeId = new TradeId(o2.orderId, o1.orderId);
+        }
+
         //Check if already traded before
         Trade trade = tradeMap.get(tradeId);
         if (trade == null) {
@@ -128,6 +149,7 @@ class OrderBook {
         }
     }
 
+    //Print Order book in table format
     private void printOrderBook() {
         //Need to copy queues as only get correct priority ordering by removing everything,
         //calling toString just prints the tree left to right
@@ -162,11 +184,5 @@ class OrderBook {
             System.out.printf("|%10s|%13s|%7s|%7s|%13s|%10s|\n", bId, bVol, bPrc, sPrc, sVol, sId);
         }
         System.out.println("+-----------------------------------------------------------------+");
-    }
-
-    void clear(){
-        System.out.println("**** Cleared Order Book ****");
-        buyQueue.clear();
-        sellQueue.clear();
     }
 }

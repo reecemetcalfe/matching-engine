@@ -6,24 +6,14 @@ class Order {
     int orderId;
     int filledQty;
     int totalQty;
-    long entryTime;
     short limitPrice;
 
-    Order(char side, int orderId, int qty, short limitPrice) {
+    /* Assumed all orders have a limit price i.e. no 'at best' */
+    Order(char side, int orderId, short limitPrice, int qty) {
         this.side = side;
         this.orderId = orderId;
         this.totalQty = qty;
         this.filledQty = 0;
-        this.entryTime = System.nanoTime();
         this.limitPrice = limitPrice;
-    }
-
-    @Override
-    public String toString() {
-        return "***ORDER [" + side + "|" +
-                            orderId + "|" +
-                            limitPrice + "|" +
-                            totalQty + "|" +
-                            limitPrice + "]***";
     }
 }

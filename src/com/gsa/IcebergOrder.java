@@ -1,21 +1,11 @@
 package com.gsa;
 
-// Used for IcebergOrders with addition of a peakSize
+// Model IcebergOrders with addition of a peakSize
 class IcebergOrder extends Order {
     int peakSize;
 
-    IcebergOrder(char side, int orderId, int qty, short limitPrice, int peakSize) {
-        super(side, orderId, qty, limitPrice);
+    IcebergOrder(char side, int orderId, short limitPrice, int qty, int peakSize) {
+        super(side, orderId, limitPrice, qty);
         this.peakSize = peakSize;
-    }
-
-    @Override
-    public String toString() {
-        return "***ORDER [" + side + "|" +
-                            orderId + "|" +
-                            limitPrice + "|" +
-                            totalQty + "|" +
-                            limitPrice + "|" +
-                            peakSize + "]***";
     }
 }

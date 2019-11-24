@@ -2,6 +2,7 @@ package com.gsa;
 
 import java.util.Objects;
 
+//Holds two parties involved in a Trade
 class TradeId {
     int buyOrderId;
     int sellOrderId;

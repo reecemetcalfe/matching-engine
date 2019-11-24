@@ -1,8 +1,9 @@
 package com.gsa;
 
+//Models a trade
 class Trade {
-    final TradeId tradeId;
-    final short price;
+    private final TradeId tradeId;
+    private final short price;
     int qty;
 
     Trade(TradeId tradeId, short price, int qty) {
@@ -16,7 +17,7 @@ class Trade {
         return String.format("%d,%d,%d,%d", tradeId.buyOrderId, tradeId.sellOrderId, price, qty);
     }
 
-    public void printTrade() {
+    void printTrade() {
         System.out.println(toString());
     }
 }
