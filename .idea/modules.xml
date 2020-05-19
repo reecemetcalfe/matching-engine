@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/gsa-capital.iml" filepath="$PROJECT_DIR$/.idea/gsa-capital.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/matching-engine.iml" filepath="$PROJECT_DIR$/.idea/matching-engine.iml" />
     </modules>
   </component>
 </project>
